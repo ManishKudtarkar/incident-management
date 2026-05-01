@@ -1,0 +1,27 @@
+[
+  {
+    "component_id": "db_primary",
+    "timestamp": 1714550400.0,
+    "error_message": "Connection timeout after 30s"
+  },
+  {
+    "component_id": "api_gateway",
+    "timestamp": 1714550410.0,
+    "error_message": "503 Service Unavailable"
+  },
+  {
+    "component_id": "cache_redis",
+    "timestamp": 1714550420.0,
+    "error_message": "NOAUTH Authentication required"
+  },
+  {
+    "component_id": "db_primary",
+    "timestamp": 1714550430.0,
+    "error_message": "Too many connections"
+  },
+  {
+    "component_id": "queue_kafka",
+    "timestamp": 1714550440.0,
+    "error_message": "Leader not available for partition 0"
+  }
+]
