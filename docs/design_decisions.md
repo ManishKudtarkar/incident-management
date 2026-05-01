@@ -8,6 +8,7 @@
 - **RCA categories**: `root_cause_category` is stored with the RCA and must be one of the backend-defined categories exposed by `GET /rca/categories`.
 - **Two-step resolution**: Submitting RCA marks the incident `RESOLVED`; clicking **Close Incident** calls `/rca/close/{incident_id}` and marks it `CLOSED`.
 - **MTTR**: Calculated from incident `start_time` to RCA `end_time`; the UI also previews it while filling the RCA form.
+- **Polling-based real-time UI**: The dashboard refreshes `GET /incident/` every 5 seconds. This gives a live demo experience without adding WebSocket infrastructure.
 - **Backpressure**: The queue layer absorbs spikes between the API and worker.
 - **Docker startup compatibility**: The backend entrypoint creates missing tables and applies a lightweight compatibility fix for existing local databases that are missing `rcas.root_cause_category`.
 

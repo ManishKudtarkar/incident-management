@@ -16,7 +16,7 @@ The assignment required building a Mission-Critical Incident Management System w
 - Mandatory RCA before closure
 - RCA root cause category selection
 - MTTR calculation
-- React dashboard with live feed, incident detail, RCA form, and close action
+- React dashboard with polling-based live feed, incident detail, RCA form, and close action
 
 ---
 
@@ -146,6 +146,19 @@ Summary:
 
 ---
 
+## Real-Time Dashboard
+
+The dashboard currently uses polling, not WebSockets:
+
+1. `useIncidents` loads incidents from `GET /incident/`.
+2. While live mode is on, it repeats the request every 5 seconds.
+3. The UI shows **Live On**, last refresh time, and background syncing.
+4. Users can pause live refresh or manually refresh.
+
+This is intentionally simple for the Docker demo. WebSockets or Server-Sent Events are the next production upgrade.
+
+---
+
 ## RCA and Closure Flow
 
 1. Responder opens an incident and moves it from `OPEN` to `INVESTIGATING`.
@@ -167,5 +180,6 @@ Summary:
 5. **Live MTTR preview** - RCA form shows calculated MTTR as dates are edited.
 6. **RCA category dropdown** - backend categories are exposed through `/rca/categories`.
 7. **Resolved-to-closed UI action** - resolved incidents show a **Close Incident** button.
-8. **Signal simulator** - `scripts/simulate_signals.py` sends realistic test signals.
-9. **Production Docker setup** - multi-stage builds, non-root user, and health checks.
+8. **Live dashboard polling** - dashboard refreshes incidents every 5 seconds.
+9. **Signal simulator** - `scripts/simulate_signals.py` sends realistic test signals.
+10. **Production Docker setup** - multi-stage builds, non-root user, and health checks.

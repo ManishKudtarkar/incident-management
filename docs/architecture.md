@@ -10,7 +10,8 @@ The Incident Management System (IMS) is designed for high-throughput async signa
 - **Queue**: In-memory `asyncio.Queue` buffers signals between the API and worker.
 - **Worker**: Debounces signals by component and creates incidents.
 - **Storage**: MongoDB stores raw signals, PostgreSQL stores incidents and RCAs, Redis supports cache/debounce/rate-limit data.
-- **Frontend**: React dashboard for incident triage, RCA submission, and final close.
+- **Frontend**: React dashboard for live incident triage, RCA submission, and final close.
+- **Real-time updates**: The dashboard polls `GET /incident/` every 5 seconds while live mode is enabled.
 
 ## Incident Lifecycle
 
@@ -39,6 +40,16 @@ The frontend gets valid categories from `GET /rca/categories`, submits the RCA w
 4. UI fetches incident and signal details from the backend
 5. RCA submit updates the incident to `RESOLVED`
 6. RCA close validates the RCA and updates the incident to `CLOSED`
+
+## Real-Time Model
+
+The current implementation uses polling-based real-time updates:
+
+- Dashboard auto-refreshes incidents every 5 seconds.
+- Users can pause live refresh with the **Live On / Live Off** control.
+- The **Refresh** button remains available for manual reloads.
+
+This keeps the local Docker deployment simple. A production version can replace polling with WebSockets or Server-Sent Events without changing the incident lifecycle model.
 
 ## Startup
 

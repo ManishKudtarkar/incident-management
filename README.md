@@ -21,9 +21,10 @@
 10. [API reference](#-api-reference)
 11. [Running the project](#-running-the-project)
 12. [Generating test data](#-generating-test-data)
-13. [Closing an incident](#closing-an-incident)
-14. [Environment variables](#-environment-variables)
-15. [Future improvements](#-future-improvements)
+13. [Real-time updates](#real-time-updates)
+14. [Closing an incident](#closing-an-incident)
+15. [Environment variables](#-environment-variables)
+16. [Future improvements](#-future-improvements)
 
 ---
 
@@ -580,7 +581,7 @@ Fires 1000 signals/second for 10 seconds (10,000 total signals):
 python scripts/simulate_signals.py
 ```
 
-After it runs, refresh the dashboard — you'll see multiple incidents created from different components.
+After it runs, open the dashboard — incidents appear automatically while live refresh is on.
 
 ### Option 3 — Manual API call
 
@@ -602,6 +603,19 @@ scripts/rdbms_mcp_failure.json
 ```
 
 It mocks a chained incident: PostgreSQL/RDBMS outage, API degradation, then MCP server/tool-context failures.
+
+---
+
+## Real-time updates
+
+The dashboard uses polling-based real-time updates. It fetches the latest incidents every 5 seconds and shows a **Live On** indicator with the last refresh time.
+
+- **Current mode**: HTTP polling through `GET /incident/`
+- **User control**: **Live On / Live Off** toggle on the dashboard
+- **Manual fallback**: **Refresh** button still works
+- **Future upgrade**: WebSockets or Server-Sent Events for push-based updates
+
+This keeps the Docker demo simple while still making newly generated incidents appear without a manual page refresh.
 
 ---
 
@@ -635,7 +649,7 @@ All configuration lives in `backend/.env`. The defaults work out of the box with
 
 ## 🚀 Future improvements
 
-- [ ] **WebSocket live updates** — dashboard refreshes automatically without polling
+- [ ] **WebSocket live updates** — replace polling with push-based dashboard updates
 - [ ] **Authentication & RBAC** — login system, different roles (viewer, responder, admin)
 - [ ] **Incident escalation** — auto-escalate P2 → P0 if unacknowledged for X minutes
 - [ ] **Notification integrations** — real PagerDuty, Slack, email webhooks

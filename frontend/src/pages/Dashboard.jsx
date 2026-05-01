@@ -18,7 +18,11 @@ const STATUS_ORDER = ["OPEN", "INVESTIGATING", "RESOLVED", "CLOSED"];
 const FILTER_OPTIONS = ["ALL", "OPEN", "INVESTIGATING", "RESOLVED", "CLOSED"];
 
 export default function Dashboard() {
-  const { incidents, loading, error, reload } = useIncidents();
+  const [liveRefresh, setLiveRefresh] = useState(true);
+  const { incidents, loading, refreshing, error, lastUpdated, reload } = useIncidents({
+    live: liveRefresh,
+    refreshMs: 5000,
+  });
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [severityFilter, setSeverityFilter] = useState("ALL");
 
@@ -48,24 +52,51 @@ export default function Dashboard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Incident Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Real-time view of all system incidents
-          </p>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-0.5">
+            <span>Live incident view</span>
+            <span
+              className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                liveRefresh
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : "bg-gray-50 text-gray-500 border-gray-200"
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${liveRefresh ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+              {liveRefresh ? "Auto-refresh 5s" : "Paused"}
+            </span>
+            {lastUpdated && (
+              <span className="text-xs text-gray-400">
+                Last updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
-        <button
-          onClick={reload}
-          disabled={loading}
-          className="flex items-center gap-2 text-sm bg-white border border-gray-300 hover:bg-gray-50 px-3 py-2 rounded-lg shadow-sm transition-colors disabled:opacity-50"
-        >
-          <svg
-            className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLiveRefresh((value) => !value)}
+            className={`text-sm border px-3 py-2 rounded-lg shadow-sm transition-colors ${
+              liveRefresh
+                ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                : "bg-white border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh
-        </button>
+            {liveRefresh ? "Live On" : "Live Off"}
+          </button>
+          <button
+            onClick={reload}
+            disabled={loading || refreshing}
+            className="flex items-center gap-2 text-sm bg-white border border-gray-300 hover:bg-gray-50 px-3 py-2 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+          >
+            <svg
+              className={`w-4 h-4 ${loading || refreshing ? "animate-spin" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -148,6 +179,7 @@ export default function Dashboard() {
         <div>
           <p className="text-xs text-gray-400 mb-3">
             Showing {filtered.length} of {incidents.length} incidents · sorted by severity then status
+            {refreshing ? " · syncing..." : ""}
           </p>
           {filtered.map((incident) => (
             <IncidentCard key={incident.id} incident={incident} />
