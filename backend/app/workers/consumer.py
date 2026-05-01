@@ -8,6 +8,23 @@ from app.utils.logger import get_logger
 
 logger = get_logger("consumer")
 
+MAX_RETRIES = 3
+RETRY_DELAY = 0.5  # seconds
+
+
+async def _with_retry(coro_fn, label: str):
+    """Run an async operation with exponential backoff retry."""
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            return await coro_fn()
+        except Exception as exc:
+            if attempt == MAX_RETRIES:
+                logger.error("%s failed after %d attempts: %s", label, MAX_RETRIES, exc)
+                raise
+            wait = RETRY_DELAY * (2 ** (attempt - 1))
+            logger.warning("%s attempt %d failed, retrying in %.1fs: %s", label, attempt, wait, exc)
+            await asyncio.sleep(wait)
+
 
 class DebounceWorker:
     """
@@ -43,9 +60,9 @@ class DebounceWorker:
 
             # ── Store raw signal in MongoDB ──────────────────────────────
             try:
-                await insert_signal(signal)
+                await _with_retry(lambda: insert_signal(signal), "MongoDB insert")
             except Exception as exc:
-                logger.error("MongoDB insert failed: %s", exc)
+                logger.error("MongoDB insert permanently failed: %s", exc)
 
             # ── Debounce: reuse existing incident within the window ───────
             within_window = (
@@ -69,19 +86,22 @@ class DebounceWorker:
                     severity = Severity.P2
 
                 try:
-                    async with SessionLocal() as session:
-                        incident = Incident(
-                            id=incident_id,
-                            component_id=comp_id,
-                            severity=severity,
-                            status=Status.OPEN,
-                            start_time=datetime.datetime.utcnow(),
-                        )
-                        session.add(incident)
-                        await session.commit()
+                    async def _create_incident():
+                        async with SessionLocal() as session:
+                            inc = Incident(
+                                id=incident_id,
+                                component_id=comp_id,
+                                severity=severity,
+                                status=Status.OPEN,
+                                start_time=datetime.datetime.utcnow(),
+                            )
+                            session.add(inc)
+                            await session.commit()
+
+                    await _with_retry(_create_incident, f"PostgreSQL create incident {incident_id}")
                     logger.info("Created incident %s for component %s", incident_id, comp_id)
                 except Exception as exc:
-                    logger.error("PostgreSQL insert failed: %s", exc)
+                    logger.error("PostgreSQL insert permanently failed: %s", exc)
 
             self.last_signal_time[comp_id] = now
 

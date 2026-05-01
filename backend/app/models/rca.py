@@ -10,6 +10,7 @@ class RCA(Base):
     id = Column(String, primary_key=True, index=True)
     incident_id = Column(String, ForeignKey("incidents.id"), nullable=False, index=True)
     root_cause = Column(String, nullable=False)
+    root_cause_category = Column(String, nullable=False, default="Unknown")
     fix_applied = Column(String, nullable=False)
     prevention_steps = Column(String, nullable=False)
     end_time = Column(DateTime, nullable=True)

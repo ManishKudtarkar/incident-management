@@ -352,7 +352,7 @@ export default function IncidentDetail() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <RCAForm incidentId={incident.id} onSubmitted={load} />
+          <RCAForm incidentId={incident.id} incidentStartTime={incident.start_time} onSubmitted={load} />
         </div>
       )}
 
