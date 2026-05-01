@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { fetchIncidentDetail, updateIncidentStatus } from "../api/api";
+import { closeIncident, fetchIncidentDetail, updateIncidentStatus } from "../api/api";
 import RCAForm from "../components/RCAForm";
 import SignalList from "../components/SignalList";
 import QuickScan from "../components/QuickScan";
@@ -122,7 +122,7 @@ function IncidentSummaryBanner({ incident, signals }) {
           {/* Next action hint */}
           <p className={`text-xs mt-2 ${textColor} opacity-70`}>
             {incident.status === "OPEN"
-              ? "→ Click "Start Investigating" to claim this incident, then submit an RCA to close it."
+              ? "→ Click \"Start Investigating\" to claim this incident, then submit an RCA to close it."
               : incident.status === "INVESTIGATING"
               ? "→ Investigation in progress. Fill in the RCA form below once the root cause is identified."
               : incident.status === "RESOLVED"
@@ -213,6 +213,18 @@ export default function IncidentDetail() {
       await load();
     } catch (err) {
       setError(err.message || "Failed to update status");
+    }
+    setTransitioning(false);
+  };
+
+  const handleClose = async () => {
+    setTransitioning(true);
+    setError(null);
+    try {
+      await closeIncident(id);
+      await load();
+    } catch (err) {
+      setError(err.message || "Failed to close incident");
     }
     setTransitioning(false);
   };
@@ -348,6 +360,24 @@ export default function IncidentDetail() {
               RCA submitted. Incident resolved and closed after{" "}
               {duration ? <strong>{duration}</strong> : "an unknown duration"}.
             </p>
+          </div>
+        </div>
+      ) : incident.status === "RESOLVED" ? (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="font-bold text-gray-900">RCA submitted</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Review is complete. Close the incident to finish the lifecycle.
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              disabled={transitioning}
+              className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              {transitioning ? "Closing..." : "Close Incident"}
+            </button>
           </div>
         </div>
       ) : (

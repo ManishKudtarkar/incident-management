@@ -1,9 +1,23 @@
 # Design Decisions
 
-- **Async Processing**: All ingestion and processing is async for scale.
-- **State Pattern**: Incident lifecycle transitions are enforced (OPEN → INVESTIGATING → RESOLVED → CLOSED).
-- **Strategy Pattern**: Alerting logic is pluggable (P0 = critical, P2 = warning).
-- **Multi-DB**: Raw signals in MongoDB, transactional data in PostgreSQL, cache in Redis.
-- **RCA Enforcement**: Cannot close incident without RCA.
-- **MTTR**: Calculated automatically on RCA submission.
-- **Backpressure**: Queue layer absorbs spikes.
+- **Async processing**: Signal ingestion and background processing are async so the API can respond quickly while workers handle persistence.
+- **State Pattern**: Incident lifecycle transitions follow `OPEN -> INVESTIGATING -> RESOLVED -> CLOSED`.
+- **Strategy Pattern**: Alerting logic is pluggable by severity (`P0` critical, `P2` warning).
+- **Multi-DB architecture**: Raw signals live in MongoDB, incident/RCA records live in PostgreSQL, and Redis supports fast cache/debounce/rate-limit data.
+- **RCA enforcement**: The backend refuses to close an incident unless a complete RCA exists.
+- **RCA categories**: `root_cause_category` is stored with the RCA and must be one of the backend-defined categories exposed by `GET /rca/categories`.
+- **Two-step resolution**: Submitting RCA marks the incident `RESOLVED`; clicking **Close Incident** calls `/rca/close/{incident_id}` and marks it `CLOSED`.
+- **MTTR**: Calculated from incident `start_time` to RCA `end_time`; the UI also previews it while filling the RCA form.
+- **Backpressure**: The queue layer absorbs spikes between the API and worker.
+- **Docker startup compatibility**: The backend entrypoint creates missing tables and applies a lightweight compatibility fix for existing local databases that are missing `rcas.root_cause_category`.
+
+## Migration Note
+
+This demo does not use Alembic yet. For the current local Docker setup, `entrypoint.sh` runs:
+
+```sql
+ALTER TABLE rcas
+ADD COLUMN IF NOT EXISTS root_cause_category VARCHAR NOT NULL DEFAULT 'Unknown';
+```
+
+That keeps existing local volumes working after the RCA category field was added. A production deployment should replace this with versioned Alembic migrations.

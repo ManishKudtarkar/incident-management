@@ -30,6 +30,13 @@ export async function submitRCA(incidentId, rca) {
   return handleResponse(res);
 }
 
+export async function closeIncident(incidentId) {
+  const res = await fetch(`${API_URL}/rca/close/${incidentId}`, {
+    method: "POST",
+  });
+  return handleResponse(res);
+}
+
 export async function updateIncidentStatus(incidentId, newStatus) {
   const res = await fetch(
     `${API_URL}/incident/${incidentId}/status?new_status=${encodeURIComponent(newStatus)}`,

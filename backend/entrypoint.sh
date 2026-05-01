@@ -10,9 +10,16 @@ async def init():
     from app.db.postgres import engine
     from app.models.incident import Base as IncidentBase
     from app.models.rca import RCA  # noqa: F401 - registers RCA table
+    from sqlalchemy import text
     try:
         async with engine.begin() as conn:
             await conn.run_sync(IncidentBase.metadata.create_all)
+            await conn.execute(text(
+                \"\"\"
+                ALTER TABLE rcas
+                ADD COLUMN IF NOT EXISTS root_cause_category VARCHAR NOT NULL DEFAULT 'Unknown'
+                \"\"\"
+            ))
         print('[entrypoint] Tables created successfully.')
     except Exception as e:
         print(f'[entrypoint] Table creation warning: {e}', file=sys.stderr)

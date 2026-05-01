@@ -58,6 +58,7 @@ export default function RCAForm({ incidentId, incidentStartTime, onSubmitted }) 
         root_cause: form.root_cause,
         fix_applied: form.fix_applied,
         prevention_steps: form.prevention_steps,
+        // Always send UTC ISO string — parse local datetime-local value as local time
         end_time: new Date(form.end_time).toISOString(),
       };
       await submitRCA(incidentId, payload);

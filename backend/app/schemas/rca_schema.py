@@ -18,13 +18,15 @@ ROOT_CAUSE_CATEGORIES = [
 
 
 class RCAIn(BaseModel):
+    start_time: Optional[datetime] = None
     root_cause: str
     root_cause_category: str = "Unknown"
     fix_applied: str
     prevention_steps: str
-    end_time: datetime
+    end_time: Optional[datetime] = None
 
 
 class RCAOut(RCAIn):
     id: str
     incident_id: str
+

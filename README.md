@@ -20,8 +20,9 @@
 10. [API reference](#-api-reference)
 11. [Running the project](#-running-the-project)
 12. [Generating test data](#-generating-test-data)
-13. [Environment variables](#-environment-variables)
-14. [Future improvements](#-future-improvements)
+13. [Closing an incident](#closing-an-incident)
+14. [Environment variables](#-environment-variables)
+15. [Future improvements](#-future-improvements)
 
 ---
 
@@ -176,6 +177,7 @@ stateDiagram-v2
 
     note right of RESOLVED
         RCA must include:
+        • Root cause category
         • Root cause
         • Fix applied
         • Prevention steps
@@ -319,7 +321,7 @@ incident-management/
 │   │   ├── App.jsx                 ← Router + Navbar
 │   │   ├── pages/
 │   │   │   ├── Dashboard.jsx       ← Incident list with filters + stat cards
-│   │   │   ├── IncidentDetail.jsx  ← Single incident view + RCA form
+│   │   │   ├── IncidentDetail.jsx  ← Single incident view + RCA form + close action
 │   │   │   └── ScanPage.jsx        ← URL scanner with results
 │   │   ├── components/
 │   │   │   ├── Badge.jsx           ← SeverityBadge + StatusBadge
@@ -442,7 +444,7 @@ Each database is used for what it's best at:
 graph TD
     subgraph PostgreSQL["🐘 PostgreSQL — Structured, relational data"]
         T1[incidents table<br/>id · component_id · severity · status · start_time · end_time]
-        T2[rcas table<br/>id · incident_id · root_cause · fix_applied · prevention_steps · end_time]
+        T2[rcas table<br/>id · incident_id · root_cause_category · root_cause · fix_applied · prevention_steps · end_time]
         T1 -->|one-to-one| T2
     end
 
@@ -475,8 +477,9 @@ graph TD
 | `GET` | `/incident/` | List all incidents | Returns array of incidents sorted by time |
 | `GET` | `/incident/{id}` | Get incident + its signals | Returns incident details + raw signals from MongoDB |
 | `PATCH` | `/incident/{id}/status` | Transition incident state | `?new_status=INVESTIGATING` |
-| `POST` | `/rca/{incident_id}` | Submit RCA, marks RESOLVED | `{"root_cause": "...", "fix_applied": "...", "prevention_steps": "..."}` |
-| `POST` | `/rca/close/{incident_id}` | Close incident (requires RCA) | Validates RCA exists before closing |
+| `GET` | `/rca/categories` | List valid RCA categories | Used by the RCA form dropdown |
+| `POST` | `/rca/{incident_id}` | Submit RCA, marks RESOLVED | `{"root_cause_category": "Network / DNS Issue", "root_cause": "...", "fix_applied": "...", "prevention_steps": "...", "end_time": "2026-05-01T14:32:00Z"}` |
+| `POST` | `/rca/close/{incident_id}` | Close incident (requires complete RCA) | Validates RCA exists before closing |
 | `POST` | `/scan/` | Scan a URL for issues | `{"url": "https://example.com"}` |
 | `GET` | `/scan/history` | Last 50 scan results | Returns array of past scans |
 | `GET` | `/health/` | System health + metrics | Returns `{"status": "ok", "metrics": {...}}` |
@@ -510,7 +513,7 @@ This single command:
 2. Builds the React frontend image (with nginx)
 3. Starts PostgreSQL, MongoDB, Redis, MinIO
 4. Waits for all databases to be healthy before starting the backend
-5. Creates all database tables automatically
+5. Creates database tables automatically and applies lightweight compatibility fixes for existing local data
 
 First run takes ~3-5 minutes (downloading images + installing packages). Subsequent runs use cached layers and start in ~30 seconds.
 
@@ -587,6 +590,18 @@ curl -X POST http://localhost:8000/signal/ \
 ```
 
 Or use the Swagger UI at http://localhost:8000/docs to send requests interactively.
+
+---
+
+## Closing an incident
+
+1. Open an `OPEN` incident from the dashboard.
+2. Click **Start Investigating**.
+3. Fill in the RCA form, including the root cause category, and submit it.
+4. The incident moves to `RESOLVED`.
+5. Click **Close Incident** to call `/rca/close/{incident_id}` and move it to `CLOSED`.
+
+The backend refuses to close an incident unless a complete RCA exists.
 
 ---
 

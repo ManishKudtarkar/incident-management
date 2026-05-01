@@ -1,3 +1,6 @@
+from datetime import timezone
+import logging
+
 from fastapi import APIRouter, HTTPException
 from app.schemas.rca_schema import RCAIn, RCAOut, ROOT_CAUSE_CATEGORIES
 from app.db.postgres import SessionLocal
@@ -5,6 +8,8 @@ from app.models.rca import RCA
 from app.models.incident import Incident, Status
 from sqlalchemy.future import select
 import uuid
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/rca", tags=["RCA"])
 
@@ -17,43 +22,55 @@ async def get_rca_categories():
 
 @router.post("/{incident_id}", response_model=RCAOut)
 async def submit_rca(incident_id: str, rca: RCAIn):
-    async with SessionLocal() as session:
-        result = await session.execute(select(Incident).where(Incident.id == incident_id))
-        incident = result.scalar_one_or_none()
-        if not incident:
-            raise HTTPException(status_code=404, detail="Incident not found")
+    try:
+        async with SessionLocal() as session:
+            result = await session.execute(select(Incident).where(Incident.id == incident_id))
+            incident = result.scalar_one_or_none()
+            if not incident:
+                raise HTTPException(status_code=404, detail="Incident not found")
 
-        # Validate category
-        if rca.root_cause_category not in ROOT_CAUSE_CATEGORIES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid category. Must be one of: {ROOT_CAUSE_CATEGORIES}",
+            # Validate category
+            if rca.root_cause_category not in ROOT_CAUSE_CATEGORIES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid category. Must be one of: {ROOT_CAUSE_CATEGORIES}",
+                )
+
+            end_time_dt = None
+            if rca.end_time:
+                end_time_dt = rca.end_time
+                if end_time_dt.tzinfo is not None:
+                    end_time_dt = end_time_dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+            rca_id = str(uuid.uuid4())
+            rca_obj = RCA(
+                id=rca_id,
+                incident_id=incident_id,
+                root_cause=rca.root_cause,
+                root_cause_category=rca.root_cause_category,
+                fix_applied=rca.fix_applied,
+                prevention_steps=rca.prevention_steps,
+                end_time=end_time_dt,
             )
+            session.add(rca_obj)
+            incident.status = Status.RESOLVED
+            incident.end_time = end_time_dt
+            await session.commit()
 
-        rca_id = str(uuid.uuid4())
-        rca_obj = RCA(
-            id=rca_id,
-            incident_id=incident_id,
-            root_cause=rca.root_cause,
-            root_cause_category=rca.root_cause_category,
-            fix_applied=rca.fix_applied,
-            prevention_steps=rca.prevention_steps,
-            end_time=rca.end_time,
-        )
-        session.add(rca_obj)
-        incident.status = Status.RESOLVED
-        incident.end_time = rca.end_time
-        await session.commit()
-
-        return RCAOut(
-            id=rca_id,
-            incident_id=incident_id,
-            root_cause=rca.root_cause,
-            root_cause_category=rca.root_cause_category,
-            fix_applied=rca.fix_applied,
-            prevention_steps=rca.prevention_steps,
-            end_time=rca.end_time,
-        )
+            return RCAOut(
+                id=rca_id,
+                incident_id=incident_id,
+                root_cause=rca.root_cause,
+                root_cause_category=rca.root_cause_category,
+                fix_applied=rca.fix_applied,
+                prevention_steps=rca.prevention_steps,
+                end_time=end_time_dt,
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error submitting RCA for incident %s: %s", incident_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while submitting RCA.")
 
 
 @router.post("/close/{incident_id}")
