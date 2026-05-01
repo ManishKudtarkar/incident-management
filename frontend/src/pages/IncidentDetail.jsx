@@ -5,6 +5,7 @@ import RCAForm from "../components/RCAForm";
 import SignalList from "../components/SignalList";
 import QuickScan from "../components/QuickScan";
 import { SeverityBadge, StatusBadge } from "../components/Badge";
+import AttachmentList from "../components/AttachmentList";
 
 const LIFECYCLE = ["OPEN", "INVESTIGATING", "RESOLVED", "CLOSED"];
 
@@ -126,7 +127,7 @@ function IncidentSummaryBanner({ incident, signals }) {
               : incident.status === "INVESTIGATING"
               ? "→ Investigation in progress. Fill in the RCA form below once the root cause is identified."
               : incident.status === "RESOLVED"
-              ? "→ Incident resolved. Close it using the RCA close button."
+              ? "→ Incident resolved. Close it using the button in the Actions panel."
               : null}
           </p>
         </div>
@@ -178,13 +179,15 @@ function LifecycleBar({ status }) {
   );
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({ label, value, isMono = false }) {
   return (
-    <div className="flex items-start gap-2 py-2 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-400 w-28 flex-shrink-0 pt-0.5 font-medium uppercase tracking-wide">
+    <div className="flex items-start gap-2 py-3 border-b border-gray-100 last:border-0">
+      <span className="text-xs text-gray-500 w-32 flex-shrink-0 font-semibold uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-sm text-gray-800 font-medium">{value}</span>
+      <span className={`text-sm text-gray-800 font-medium ${isMono ? "font-mono" : ""}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -198,19 +201,24 @@ export default function IncidentDetail() {
 
   const load = useCallback(() => {
     setLoading(true);
-    setError(null);
     fetchIncidentDetail(id)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((err) => { setError(err.message || "Failed to load incident"); setLoading(false); });
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(load, [load]);
 
-  const handleTransition = async (newStatus) => {
+  const refetch = () => {
+    // brief delay to allow backend to process
+    setTimeout(load, 200);
+  };
+
+  const handleStatusUpdate = async (newStatus) => {
     setTransitioning(true);
     try {
       await updateIncidentStatus(id, newStatus);
-      await load();
+      refetch();
     } catch (err) {
       setError(err.message || "Failed to update status");
     }
@@ -219,10 +227,9 @@ export default function IncidentDetail() {
 
   const handleClose = async () => {
     setTransitioning(true);
-    setError(null);
     try {
       await closeIncident(id);
-      await load();
+      refetch();
     } catch (err) {
       setError(err.message || "Failed to close incident");
     }
@@ -230,167 +237,155 @@ export default function IncidentDetail() {
   };
 
   if (loading && !data) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-        <div className="h-40 bg-gray-200 rounded-lg animate-pulse" />
-        <div className="h-60 bg-gray-200 rounded-lg animate-pulse" />
-      </div>
-    );
+    return <div className="p-6 text-center">Loading incident...</div>;
+  }
+  if (error) {
+    return <div className="p-6 text-center text-red-500">Error: {error}</div>;
+  }
+  if (!data) {
+    return <div className="p-6 text-center">Incident not found.</div>;
   }
 
-  if (error && !data) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-2">
-          <span>⚠️</span> {error}
-        </div>
-        <Link to="/" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
-          ← Back to Dashboard
-        </Link>
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  const { incident, signals } = data;
-  const currentIdx = LIFECYCLE.indexOf(incident.status);
-  const canTransitionManually = incident.status === "OPEN";
-
-  const duration = incident.start_time && incident.end_time
-    ? (() => {
-        const secs = Math.floor(
-          (new Date(incident.end_time) - new Date(incident.start_time)) / 1000
-        );
-        if (secs < 60) return `${secs}s`;
-        if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
-        return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
-      })()
-    : null;
-
-  // Unique components that sent signals
-  const affectedComponents = [...new Set(signals.map((s) => s.component_id).filter(Boolean))];
+  const { incident, signals, rca } = data;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-        <Link to="/" className="hover:text-blue-600 transition-colors">Dashboard</Link>
-        <span>/</span>
-        <span className="text-gray-700 font-medium font-mono">{incident.id}</span>
-      </div>
-
-      {/* Header card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <SeverityBadge severity={incident.severity} />
-              <StatusBadge status={incident.status} />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mt-2 font-mono">
-              {incident.component_id}
-            </h1>
-            <p className="text-xs text-gray-400 font-mono mt-0.5">{incident.id}</p>
-          </div>
-
-          {canTransitionManually && (
-            <button
-              onClick={() => handleTransition("INVESTIGATING")}
-              disabled={transitioning}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+    <div className="p-4 md:p-6">
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="text-gray-400 hover:text-gray-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
-              {transitioning ? "Updating…" : "▶ Start Investigating"}
-            </button>
-          )}
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </Link>
+          <h2 className="text-xl font-bold text-gray-800">Incident Details</h2>
         </div>
-
-        <LifecycleBar status={incident.status} />
-
-        {/* Info rows — all dynamic */}
-        <div className="bg-gray-50 rounded-lg px-4 py-1">
-          <InfoRow label="Started" value={new Date(incident.start_time).toLocaleString()} />
-          {incident.end_time && (
-            <InfoRow label="Resolved" value={new Date(incident.end_time).toLocaleString()} />
-          )}
-          {duration && <InfoRow label="MTTR" value={duration} />}
-          <InfoRow
-            label="Severity"
-            value={incident.severity === "P0"
-              ? "P0 — Critical (database/core infrastructure)"
-              : "P2 — Warning (service degradation)"}
-          />
-          <InfoRow
-            label="Signals"
-            value={`${signals.length} failure event${signals.length !== 1 ? "s" : ""} recorded`}
-          />
-          {affectedComponents.length > 1 && (
-            <InfoRow
-              label="Components"
-              value={affectedComponents.join(", ")}
-            />
-          )}
+        <div className="flex items-center gap-2">
+          <SeverityBadge severity={incident.severity} />
+          <StatusBadge status={incident.status} />
         </div>
       </div>
 
-      {/* Smart dynamic summary banner */}
+      <LifecycleBar status={incident.status} />
       <IncidentSummaryBanner incident={incident} signals={signals} />
 
-      {/* Signals */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
-        <SignalList signals={signals} />
-      </div>
-
-      {/* Quick URL scan */}
-      {incident.status !== "CLOSED" && (
-        <div className="mb-4">
-          <QuickScan onScanComplete={load} />
-        </div>
-      )}
-
-      {/* RCA / Closed */}
-      {incident.status === "CLOSED" ? (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 flex items-center gap-3">
-          <span className="text-3xl">✅</span>
-          <div>
-            <p className="font-bold text-green-800">Incident Closed</p>
-            <p className="text-sm text-green-600 mt-0.5">
-              RCA submitted. Incident resolved and closed after{" "}
-              {duration ? <strong>{duration}</strong> : "an unknown duration"}.
-            </p>
-          </div>
-        </div>
-      ) : incident.status === "RESOLVED" ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="font-bold text-gray-900">RCA submitted</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Review is complete. Close the incident to finish the lifecycle.
-              </p>
+      {/* ── Body ──────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Left Column ─────────────────────────────────────────── */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* ── Details Card ──────────────────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-bold text-gray-800">Incident Details</h3>
             </div>
-            <button
-              onClick={handleClose}
-              disabled={transitioning}
-              className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              {transitioning ? "Closing..." : "Close Incident"}
-            </button>
+            <div className="p-4">
+              <InfoRow label="Incident ID" value={incident.id} isMono />
+              <InfoRow label="Component ID" value={incident.component_id} isMono />
+              <InfoRow label="Severity" value={incident.severity} />
+              <InfoRow label="Status" value={incident.status} />
+              <InfoRow
+                label="Start Time"
+                value={new Date(incident.start_time).toLocaleString()}
+              />
+              {incident.end_time && (
+                <InfoRow
+                  label="End Time"
+                  value={new Date(incident.end_time).toLocaleString()}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* ── RCA Card ──────────────────────────────────────────── */}
+          {rca && (
+            <div className="bg-white border border-gray-200 rounded-xl">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="font-bold text-gray-800">Root Cause Analysis</h3>
+              </div>
+              <div className="p-4">
+                <InfoRow label="Root Cause" value={rca.root_cause} />
+                <InfoRow label="Category" value={rca.root_cause_category} />
+                <InfoRow label="Fix Applied" value={rca.fix_applied} />
+                <InfoRow label="Prevention" value={rca.prevention_steps} />
+                <AttachmentList attachments={incident.attachments} />
+              </div>
+            </div>
+          )}
+
+          {/* ── Signals Card ──────────────────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-bold text-gray-800">Signals</h3>
+            </div>
+            <div className="p-4">
+              <SignalList signals={signals} />
+            </div>
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <RCAForm incidentId={incident.id} incidentStartTime={incident.start_time} onSubmitted={load} />
-        </div>
-      )}
 
-      {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          ⚠️ {error}
+        {/* ── Right Column ────────────────────────────────────────── */}
+        <div className="space-y-6">
+          {/* ── Actions Card ──────────────────────────────────────── */}
+          {incident.status !== "CLOSED" && (
+            <div className="bg-white border border-gray-200 rounded-xl">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="font-bold text-gray-800">Actions</h3>
+              </div>
+              <div className="p-4">
+                {incident.status === "OPEN" && (
+                  <button
+                    onClick={() => handleStatusUpdate("INVESTIGATING")}
+                    disabled={transitioning}
+                    className="w-full px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                  >
+                    {transitioning ? "..." : "Start Investigating"}
+                  </button>
+                )}
+
+                {incident.status === "RESOLVED" && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      The RCA has been submitted and the incident is resolved. You can now
+                      formally close this incident.
+                    </p>
+                    <button
+                      onClick={handleClose}
+                      disabled={transitioning}
+                      className="w-full px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-green-300"
+                    >
+                      {transitioning ? "..." : "Close Incident"}
+                    </button>
+                  </div>
+                )}
+
+                {incident.status === "INVESTIGATING" && (
+                  <RCAForm
+                    incidentId={id}
+                    incidentStartTime={incident.start_time}
+                    onSubmitted={refetch}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Scan Card ─────────────────────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="p-4">
+              <QuickScan />
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

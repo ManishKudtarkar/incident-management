@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from app.models.incident import Base
+from app.db.postgres import Base
 import datetime
 
 
@@ -17,3 +17,4 @@ class RCA(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     incident = relationship("Incident", backref="rcas")
+    attachments = relationship("Attachment", back_populates="rca")

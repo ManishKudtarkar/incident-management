@@ -10,6 +10,7 @@ async def init():
     from app.db.postgres import engine
     from app.models.incident import Base as IncidentBase
     from app.models.rca import RCA  # noqa: F401 - registers RCA table
+    from app.models.attachment import Attachment  # noqa: F401 - registers Attachment table
     from sqlalchemy import text
     try:
         async with engine.begin() as conn:

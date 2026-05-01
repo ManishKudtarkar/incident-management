@@ -24,6 +24,7 @@ class RCAIn(BaseModel):
     fix_applied: str
     prevention_steps: str
     end_time: Optional[datetime] = None
+    attachment_ids: list[str] = []
 
 
 class RCAOut(RCAIn):

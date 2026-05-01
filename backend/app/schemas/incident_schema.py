@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+from app.schemas.attachment_schema import Attachment
+
 class IncidentBase(BaseModel):
 	component_id: str
 	severity: str
@@ -15,3 +17,4 @@ class IncidentCreate(BaseModel):
 
 class IncidentOut(IncidentBase):
 	id: str
+	attachments: list[Attachment] = []

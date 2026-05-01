@@ -1,12 +1,14 @@
 import os
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 POSTGRES_URI = os.getenv(
     "POSTGRES_URI",
     "postgresql+asyncpg://postgres:postgres@postgres:5432/ims",
 )
+
+Base = declarative_base()
 
 engine = create_async_engine(
     POSTGRES_URI,

@@ -72,3 +72,14 @@ export async function fetchCrawlHistory() {
   const res = await fetch(`${API_URL}/scan/crawl/history`);
   return handleResponse(res);
 }
+
+export async function uploadAttachment(incidentId, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/incidents/${incidentId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+  return handleResponse(res);
+}

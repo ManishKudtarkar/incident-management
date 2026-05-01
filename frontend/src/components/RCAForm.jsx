@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { submitRCA } from "../api/api";
+import { submitRCA, uploadAttachment } from "../api/api";
 
 const ROOT_CAUSE_CATEGORIES = [
   "Infrastructure Failure",
@@ -35,12 +35,17 @@ export default function RCAForm({ incidentId, incidentStartTime, onSubmitted }) 
       : toLocalDatetimeValue(now),
     end_time: toLocalDatetimeValue(now),
   });
+  const [attachment, setAttachment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    setAttachment(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
@@ -52,6 +57,12 @@ export default function RCAForm({ incidentId, incidentStartTime, onSubmitted }) 
     setLoading(true);
     setError("");
     try {
+      let attachmentId = null;
+      if (attachment) {
+        const uploaded = await uploadAttachment(incidentId, attachment);
+        attachmentId = uploaded.id;
+      }
+
       // Convert local datetime-local value back to ISO string for the API
       const payload = {
         root_cause_category: form.root_cause_category,
@@ -60,6 +71,7 @@ export default function RCAForm({ incidentId, incidentStartTime, onSubmitted }) 
         prevention_steps: form.prevention_steps,
         // Always send UTC ISO string — parse local datetime-local value as local time
         end_time: new Date(form.end_time).toISOString(),
+        attachment_ids: attachmentId ? [attachmentId] : [],
       };
       await submitRCA(incidentId, payload);
       setSuccess(true);
@@ -96,6 +108,19 @@ export default function RCAForm({ incidentId, incidentStartTime, onSubmitted }) 
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ── Attachment ────────────────────────────────────────────── */}
+        <div>
+          <label htmlFor="attachment" className="block text-sm font-medium text-gray-700 mb-1">
+            Attach File
+          </label>
+          <input
+            id="attachment"
+            name="attachment"
+            type="file"
+            onChange={handleFileChange}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
 
         {/* ── Incident timeline ─────────────────────────────────────── */}
         <div className="bg-white border border-gray-200 rounded-lg p-4">

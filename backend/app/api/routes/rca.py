@@ -6,6 +6,7 @@ from app.schemas.rca_schema import RCAIn, RCAOut, ROOT_CAUSE_CATEGORIES
 from app.db.postgres import SessionLocal
 from app.models.rca import RCA
 from app.models.incident import Incident, Status
+from app.models.attachment import Attachment
 from sqlalchemy.future import select
 import uuid
 
@@ -55,6 +56,14 @@ async def submit_rca(incident_id: str, rca: RCAIn):
             session.add(rca_obj)
             incident.status = Status.RESOLVED
             incident.end_time = end_time_dt
+            
+            # Link attachments
+            for attachment_id in rca.attachment_ids:
+                result = await session.execute(select(Attachment).where(Attachment.id == attachment_id))
+                attachment = result.scalar_one_or_none()
+                if attachment:
+                    attachment.rca_id = rca_id
+
             await session.commit()
 
             return RCAOut(

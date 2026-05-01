@@ -2,10 +2,8 @@ import datetime
 import enum
 
 from sqlalchemy import Column, DateTime, Enum, String
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
-
+from sqlalchemy.orm import relationship
+from app.db.postgres import Base
 
 class Severity(enum.Enum):
     P0 = "P0"
@@ -28,3 +26,5 @@ class Incident(Base):
     status = Column(Enum(Status), nullable=False)
     start_time = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     end_time = Column(DateTime, nullable=True)
+
+    attachments = relationship("Attachment", back_populates="incident")
