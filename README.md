@@ -343,6 +343,7 @@ incident-management/
 │
 ├── scripts/
 │   ├── simulate_signals.py         ← Fires 1000 signals/sec for load testing
+│   ├── rdbms_mcp_failure.json      ← Sample RDBMS outage followed by MCP failure
 │   └── seed_data.json              ← Sample signal data
 │
 └── docs/
@@ -591,6 +592,16 @@ curl -X POST http://localhost:8000/signal/ \
 ```
 
 Or use the Swagger UI at http://localhost:8000/docs to send requests interactively.
+
+### Sample stack failure JSON
+
+For the assignment sample-data requirement, use:
+
+```text
+scripts/rdbms_mcp_failure.json
+```
+
+It mocks a chained incident: PostgreSQL/RDBMS outage, API degradation, then MCP server/tool-context failures.
 
 ---
 

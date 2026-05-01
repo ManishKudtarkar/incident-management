@@ -1,0 +1,27 @@
+[
+  {
+    "component_id": "db_postgres_main",
+    "timestamp": 1714550400.0,
+    "error_message": "RDBMS outage: primary PostgreSQL node is unreachable, connection pool exhausted"
+  },
+  {
+    "component_id": "db_postgres_main",
+    "timestamp": 1714550405.0,
+    "error_message": "RDBMS outage: query timeout on orders and transactions tables"
+  },
+  {
+    "component_id": "api_gateway",
+    "timestamp": 1714550410.0,
+    "error_message": "Upstream dependency failure: database-backed requests returning HTTP 503"
+  },
+  {
+    "component_id": "mcp_server",
+    "timestamp": 1714550420.0,
+    "error_message": "MCP failure: tool registry unavailable after downstream RDBMS outage"
+  },
+  {
+    "component_id": "mcp_server",
+    "timestamp": 1714550425.0,
+    "error_message": "MCP failure: context retrieval timed out while loading incident metadata"
+  }
+]
