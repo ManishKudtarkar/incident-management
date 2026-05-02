@@ -19,6 +19,21 @@
 | Backpressure | Queue buffering + rate limiting |
 | Observability | /health + metrics logging |
 
+## 💡 Why This System Matters
+
+In real-world distributed systems, a single failure can generate thousands of error signals.
+
+Without an IMS:
+- Engineers get flooded with duplicate alerts
+- No structured resolution workflow exists
+- Root causes are not documented
+
+This system ensures:
+- Signal noise is reduced via debouncing
+- Incidents are tracked systematically
+- Every issue is resolved with documented RCA
+- System reliability improves over time
+
 ## 📖 Table of Contents
 
 1. [What is this?](#-what-is-this)
