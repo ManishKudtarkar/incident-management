@@ -3,60 +3,97 @@ import { Link } from "react-router-dom";
 import { SeverityBadge, StatusBadge } from "./Badge";
 
 function timeAgo(dateStr) {
-  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffSeconds = Math.floor((now - date) / 1000);
+
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }
 
-const LEFT_BORDER = {
-  P0: "border-l-4 border-l-red-500",
-  P2: "border-l-4 border-l-yellow-400",
+const LEFT_BORDER_COLOR = {
+  P0: "border-l-red-500",
+  P1: "border-l-orange-500",
+  P2: "border-l-yellow-400",
 };
 
 export default function IncidentCard({ incident }) {
-  const border = LEFT_BORDER[incident.severity] || "border-l-4 border-l-gray-300";
-  const isActive = incident.status === "OPEN" || incident.status === "INVESTIGATING";
+  const borderClass = LEFT_BORDER_COLOR[incident.severity] || "border-l-slate-300";
 
   return (
     <Link
       to={`/incident/${incident.id}`}
-      className={`block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-3 ${border} overflow-hidden`}
+      className={`block p-4 hover:bg-slate-50 transition-colors duration-150 border-l-4 ${borderClass}`}
     >
-      <div className="p-4">
-        {/* Top row */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 font-mono mb-0.5">{incident.id}</p>
-            <h3 className="font-semibold text-gray-900 text-base truncate">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold text-slate-800 text-base truncate">
               {incident.component_id}
             </h3>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SeverityBadge severity={incident.severity} />
             <StatusBadge status={incident.status} />
           </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Incident started {timeAgo(incident.start_time)} on {new Date(incident.start_time).toLocaleDateString()}
+          </p>
         </div>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <SeverityBadge severity={incident.severity} />
+          <span className="text-slate-400 text-lg">›</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
-        {/* Bottom row */}
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-          <span>
-            Started{" "}
-            <span className="font-medium text-gray-700">
-              {timeAgo(incident.start_time)}
-            </span>
-            {" · "}
-            {new Date(incident.start_time).toLocaleString()}
-          </span>
-          {incident.end_time && (
-            <span className="text-green-600 font-medium">
-              Resolved {timeAgo(incident.end_time)}
-            </span>
-          )}
-          {isActive && (
-            <span className="text-blue-600 font-medium">View details →</span>
-          )}
+function timeAgo(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffSeconds = Math.floor((now - date) / 1000);
+
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+const LEFT_BORDER_COLOR = {
+  P0: "border-l-red-500",
+  P1: "border-l-orange-500",
+  P2: "border-l-yellow-400",
+};
+
+export default function IncidentCard({ incident }) {
+  const borderClass = LEFT_BORDER_COLOR[incident.severity] || "border-l-slate-300";
+
+  return (
+    <Link
+      to={`/incident/${incident.id}`}
+      className={`block p-4 hover:bg-slate-50 transition-colors duration-150 border-l-4 ${borderClass}`}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold text-slate-800 text-base truncate">
+              {incident.component_id}
+            </h3>
+            <StatusBadge status={incident.status} />
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Incident started {timeAgo(incident.start_time)} on {new Date(incident.start_time).toLocaleDateString()}
+          </p>
+        </div>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <SeverityBadge severity={incident.severity} />
+          <ChevronRightIcon className="h-6 w-6 text-slate-400" />
         </div>
       </div>
     </Link>

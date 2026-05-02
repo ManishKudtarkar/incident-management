@@ -117,9 +117,9 @@ def burst_signals(rate: int = 50, duration: int = 5) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="IMS Signal Simulator")
-    parser.add_argument("--rate", type=int, default=50, help="Signals per second (default: 50)")
-    parser.add_argument("--duration", type=int, default=5, help="Duration in seconds (default: 5)")
-    parser.add_argument("--burst", action="store_true", help="Burst mode: 1000/sec for 10s")
+    parser.add_argument("--rate", type=int, default=1000, help="Signals per second (default: 1000)")
+    parser.add_argument("--duration", type=int, default=1, help="Duration in seconds (default: 1)")
+    parser.add_argument("--burst", action="store_true", help="Burst mode: 1000/sec for 10s (10,000 total)")
     args = parser.parse_args()
 
     if args.burst:
