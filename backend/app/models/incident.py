@@ -2,8 +2,9 @@ import datetime
 import enum
 
 from sqlalchemy import Column, DateTime, Enum, String
-from sqlalchemy.orm import relationship
-from app.db.postgres import Base
+from sqlalchemy.orm import relationship, declarative_base
+
+Base = declarative_base()  # Single source of truth for all models
 
 class Severity(enum.Enum):
     P0 = "P0"

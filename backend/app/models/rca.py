@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from app.db.postgres import Base
+from app.models.incident import Base
 import datetime
 
 
