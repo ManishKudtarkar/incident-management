@@ -6,6 +6,18 @@
 > Built with **FastAPI · React · PostgreSQL · MongoDB · Redis · Docker**
 
 ---
+## 📊 Assignment Requirement Mapping
+
+| Requirement | Implementation |
+|------------|--------------|
+| Async Processing | FastAPI async + asyncio.Queue + worker |
+| Debouncing | Redis TTL-based grouping |
+| RCA Validation | Enforced before closing incident |
+| MTTR Calculation | Computed from start_time and RCA end_time |
+| State Pattern | Incident lifecycle classes |
+| Strategy Pattern | Alerting (P0, P2) |
+| Backpressure | Queue buffering + rate limiting |
+| Observability | /health + metrics logging |
 
 ## 📖 Table of Contents
 
