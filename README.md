@@ -2,7 +2,7 @@
 
 > A production-grade platform that watches your systems, groups failure signals into incidents, and enforces a full investigation + Root Cause Analysis before anything can be closed.
 >
-> Built with **FastAPI · React · PostgreSQL · MongoDB · Redis · M
+> Built with FastAPI · React · PostgreSQL · MongoDB · Redis 
 
 https://github.com/user-attachments/assets/1f0b0bee-e9ec-4e32-8f17-1d081b731c76
 
