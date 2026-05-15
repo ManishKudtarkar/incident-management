@@ -631,9 +631,9 @@ Key points:
 ## 👨‍💻 Author
 
 **Manish Kudtarkar**  
-B.Tech CSE (Big Data Analytics)  
-GitHub: [ManishKudtarkar/incident-management](https://github.com/ManishKudtarkar/incident-management)
-linkedln:  [www.linkedin.com/in/manish-kudtarkar](www.linkedin.com/in/manish-kudtarkar)
+---
+[**LinkedIn**](https://www.linkedin.com/in/manish-kudtarkar) | [**GitHub**](https://github.com/ManishKudtarkar) | [**Project Repository**](https://github.com/ManishKudtarkar/incident-management)
+---
 ---
 
 ## 📄 License
