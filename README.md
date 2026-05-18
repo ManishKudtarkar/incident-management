@@ -1,5 +1,7 @@
 # 🚨 Mission-Critical Incident Management System (IMS)
 
+[![Build and publish Docker images](https://github.com/ManishKudtarkar/incident-management/actions/workflows/docker-image.yml/badge.svg)](https://github.com/ManishKudtarkar/incident-management/actions/workflows/docker-image.yml)
+
 > A production-grade platform that watches your systems, groups failure signals into incidents, and enforces a full investigation + Root Cause Analysis before anything can be closed.
 >
 > Built with FastAPI · React · PostgreSQL · MongoDB · Redis 
