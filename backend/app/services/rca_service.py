@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 from sqlalchemy.future import select
 
 from app.db.postgres import SessionLocal
+from app.models import Attachment  # noqa: F401 – ensure all models are registered
 from app.models.incident import Incident, Status
 from app.models.rca import RCA
 from app.utils.time_utils import calc_mttr
