@@ -45,41 +45,41 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           python - <<'PY'
-            import asyncio
-            from sqlalchemy import text
-            from app.db.postgres import engine
+          import asyncio
+          from sqlalchemy import text
+          from app.db.postgres import engine
 
-            async def wait_for_db():
-                for attempt in range(1, 31):
-                    try:
-                        async with engine.begin() as conn:
-                            await conn.execute(text('SELECT 1'))
-                        print('PostgreSQL is ready.')
-                        return
-                    except Exception as exc:
-                        print(f'Waiting for database ({attempt}/30): {exc}')
-                        await asyncio.sleep(2)
-                raise SystemExit('PostgreSQL did not become ready in time.')
+          async def wait_for_db():
+              for attempt in range(1, 31):
+                  try:
+                      async with engine.begin() as conn:
+                          await conn.execute(text('SELECT 1'))
+                      print('PostgreSQL is ready.')
+                      return
+                  except Exception as exc:
+                      print(f'Waiting for database ({attempt}/30): {exc}')
+                      await asyncio.sleep(2)
+              raise SystemExit('PostgreSQL did not become ready in time.')
 
-            asyncio.run(wait_for_db())
+          asyncio.run(wait_for_db())
           PY
         working-directory: backend
 
       - name: Create backend database schema
         run: |
           python - <<'PY'
-            import asyncio
-            from app.db.postgres import engine
-            from app.models.incident import Base as IncidentBase
-            from app.models.rca import RCA  # noqa: F401
-            from app.models.attachment import Attachment  # noqa: F401
+          import asyncio
+          from app.db.postgres import engine
+          from app.models.incident import Base as IncidentBase
+          from app.models.rca import RCA  # noqa: F401
+          from app.models.attachment import Attachment  # noqa: F401
 
-            async def init():
-                async with engine.begin() as conn:
-                    await conn.run_sync(IncidentBase.metadata.create_all)
-                print('Database schema created.')
+          async def init():
+              async with engine.begin() as conn:
+                  await conn.run_sync(IncidentBase.metadata.create_all)
+              print('Database schema created.')
 
-            asyncio.run(init())
+          asyncio.run(init())
           PY
         working-directory: backend
 
