@@ -35,7 +35,10 @@ This system ensures:
 - Every issue is resolved with documented RCA
 - System reliability improves over time
 
-## 📖 Table of Contents
+## � GitHub Actions
+A GitHub Actions workflow is configured at `.github/workflows/docker-image.yml`. It runs on `push` and `pull_request` to `main`, validates backend tests, builds the frontend, and publishes both backend and frontend Docker images to GitHub Container Registry (GHCR).
+
+## �📖 Table of Contents
 
 1. [What is this?](#-what-is-this)
 2. [How it works — the big picture](#-how-it-works--the-big-picture)
