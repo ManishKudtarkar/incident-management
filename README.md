@@ -286,7 +286,7 @@ flowchart TD
 | **React + Vite** | Frontend dashboard | Fast build tool, component-based UI |
 | **TailwindCSS** | Styling | Utility-first CSS, no separate stylesheet files |
 | **nginx** | Serves built React app, proxies `/api` to backend | Production-grade static server + reverse proxy |
-| **Docker Compose** | Runs all 6 services with one command | Reproducible environment on any machine |
+| **Docker Compose** | Runs all 6 services with one command with distinct pattern of project structure | Reproducible environment on any machine |
 
 ---
 
